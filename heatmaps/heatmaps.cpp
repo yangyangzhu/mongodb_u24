@@ -37,7 +37,7 @@ int main( int argc, char** argv )
     image2 = imread(argv[2], CV_8UC1);
     int tile_size = atoi(argv[3]);
     
-    if (!image1.data || !image2.data) {
+    if (!image1.data && !image2.data) {
         cout << "Could not open images!" << endl;
         return 2;
     }
@@ -46,15 +46,21 @@ int main( int argc, char** argv )
         return 2;
     }
 
-    int rows, cols;
+    bool missOneMask = false;
+    if (!image1.data || !image2.data)  missOneMask = true;
     
-    if (image1.rows != image2.rows || image1.cols != image2.cols) {
+    Mat image = image1;
+    if (!image1.data) image = image2;
+
+    int rows, cols;
+    if (!missOneMask && (image1.rows != image2.rows || image1.cols != image2.cols)) {
         cout << "Images are not the same size" << endl;
         return 3;
     } else {
-        rows = image1.rows;
-        cols = image1.cols;
+        rows = image.rows;
+        cols = image.cols;
     }
+  
     
     int image_width = atoi(argv[4]);
     int image_height = atoi(argv[5]);
@@ -119,9 +125,11 @@ int main( int argc, char** argv )
     int count = 1;
 
     int col_count = (cols + tile_size - 1) / tile_size;
-    int row_count = (rows + tile_size - 1) / tile_size; 
+    int row_count = (rows + tile_size - 1) / tile_size;
+    //cout << "col:" << cols << endl << "row" << rows << endl; 
     for (int i = 0; i < col_count; ++i) {
         for ( int j = 0; j < row_count; ++j) {
+            
             string tile_id =  to_string((long long)big_tile_col) + "_" + to_string((long long)big_tile_row) 
                               + "_" + to_string((long long)i) + "_" + to_string((long long)j); 
             int local_col = i*tile_size;
@@ -131,25 +139,42 @@ int main( int argc, char** argv )
 
             int local_width = min(tile_size, cols-local_col);
             int local_height = min(tile_size, rows-local_row);
-   
-            region  = Rect(local_col, local_row, local_width, local_height);
-            image1_roi = image1(region);
-            image2_roi = image2(region);
-            bitwise_and(image1_roi,image2_roi,result);
-     
+    
             double x = global_col/(double)image_width;
             double y = global_row/(double)image_height;
             double w = local_width/(double)image_width;            
-            double h = local_height/(double)image_width;
+            double h = local_height/(double)image_height;
 
             int area = local_width*local_height;
-            double tile_dice = 2.0*countNonZero(result)/(countNonZero(image1_roi) + countNonZero(image2_roi));
-             
+            double tile_dice;
+          
+            region  = Rect(local_col, local_row, local_width, local_height);
+            if (missOneMask && !countNonZero(image(region))) {
+                continue;
+            } else if (missOneMask) {
+                tile_dice = 0.0; 
+            } else {
+            
+                image1_roi = image1(region);
+                image2_roi = image2(region);
+            
+                int c1 = countNonZero(image1_roi);
+                int c2 = countNonZero(image2_roi);
+                if (c1!=0 && c2!=0) {
+                    bitwise_and(image1_roi,image2_roi,result);
+                    tile_dice = 2.0*countNonZero(result)/(c1 + c2);
+                } else if (c1==0 && c2==0){
+                    continue;
+                } else {
+                    tile_dice = 0.0;
+                }
+            }
+
             std::stringstream jstrm;
             
             jstrm << "{"
                   << "\"analysis_execution_id\":\"v1:v1a:tile_dice\","
-                  << "\"tile_id\":" << tile_id << ","
+                  << "\"tile_id\":\"" << tile_id << "\","
                   << "\"loc\":[" << x << "," << y << "],"
                   << "\"w\":" << w << ","
                   << "\"h\":" << h << ","
@@ -169,7 +194,7 @@ int main( int argc, char** argv )
                                << "\"caseid\":\"" << image_caseid << "\","
                                << "\"objective\":" << image_objective << "}"
                   << "}";
-            //cout << jstrm.str() << endl;
+                //cout << jstrm.str() << endl;
             std::ofstream out(store_path+"/tile_dice_"+tile_id+".json");
             out << jstrm.str() << endl;
         } 
