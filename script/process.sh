@@ -41,5 +41,7 @@ do
     ./heatmaps ./data/algo_v1/"$i"/"$j" ./data/algo_v1a/"$i"/"$j" 512 ${parameters[1]} ${parameters[2]} ${parameters[3]} ./data/output/"$i"
   done
 done
+
+end=`data +%s`
 runtime=$((end-start))
 echo "$runtime"
