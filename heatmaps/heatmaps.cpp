@@ -152,7 +152,11 @@ int main( int argc, char** argv )
             if (missOneMask && !countNonZero(image(region))) {
                 continue;
             } else if (missOneMask) {
-                tile_dice = 0.0; 
+                int c = countNonZero(image(region));
+                if (c/2.0 > 200)
+                    tile_dice = 0.0; 
+                else
+                    continue;
             } else {
             
                 image1_roi = image1(region);
@@ -160,13 +164,17 @@ int main( int argc, char** argv )
             
                 int c1 = countNonZero(image1_roi);
                 int c2 = countNonZero(image2_roi);
-                if (c1!=0 && c2!=0) {
-                    bitwise_and(image1_roi,image2_roi,result);
-                    tile_dice = 2.0*countNonZero(result)/(c1 + c2);
-                } else if (c1==0 && c2==0){
+                if ((c1+c2)/2.0 <= 200)
                     continue;
-                } else {
-                    tile_dice = 0.0;
+                else {
+                    if (c1!=0 && c2!=0) {
+                        bitwise_and(image1_roi,image2_roi,result);
+                        tile_dice = 2.0*countNonZero(result)/(c1 + c2);
+                    } else if (c1==0 && c2==0){
+                        continue;
+                    } else {
+                        tile_dice = 0.0;
+                    }
                 }
             }
 
