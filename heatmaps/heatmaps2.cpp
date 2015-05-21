@@ -8,26 +8,10 @@
 
 using namespace std;
 using namespace cv;
-/*
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
-}
 
-
-std::vector<std::string> split(const std::string &s, char delim) {
-    std::vector<std::string> elems;
-    split(s, delim, elems);
-    return elems;
-}
-*/
 int main( int argc, char** argv )
 {
-    if( argc != 8) {
+    if( argc != 5) {
        cout <<" Usage: heatmaps image1 image2 tile_size store_path" << endl;
        return -1;
     }
@@ -123,7 +107,7 @@ int main( int argc, char** argv )
                   << "\"h\":" << local_height << ","
                   << "\"type\":\"tile_dice\","
                   << "\"value\":" << tile_dice << ","
-                  << "\"x\":" << local_row << ",\"y\":" << local_col << ","
+                  << "\"x\":" << local_row << ",\"y\":" << local_col
                   << "}";
                 //cout << jstrm.str() << endl;
             std::ofstream out(store_path+"/tile_dice_"+tile_id+".json");
